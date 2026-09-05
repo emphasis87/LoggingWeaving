@@ -1,0 +1,95 @@
+<Project>
+  <ItemGroup>
+    <_LoggingWeavingAuthoredSource Include="@(Compile)" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <LoggingWeavingBuildHostPath Condition="'$(LoggingWeavingBuildHostPath)' == ''">$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine($(MSBuildThisFileDirectory), '..', 'tools', 'net8.0', 'any', 'LoggingWeaving.BuildHost.dll'))'))</LoggingWeavingBuildHostPath>
+  </PropertyGroup>
+
+  <Target
+    Name="PrepareLoggingWeaving"
+    DependsOnTargets="ResolveReferences;GenerateGlobalUsings;GenerateAssemblyInfo"
+    Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
+
+    <PropertyGroup>
+      <_LoggingWeavingConfigurationHash>$([MSBuild]::StableStringHash('$(DefineConstants)|$(LoggingWeavingDefaultEnabled)|$(LangVersion)'))</_LoggingWeavingConfigurationHash>
+      <_LoggingWeavingRoot>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine($(IntermediateOutputPath), 'LoggingWeaving', '$(_LoggingWeavingConfigurationHash)'))'))</_LoggingWeavingRoot>
+      <_LoggingWeavingMap>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'map.txt'))</_LoggingWeavingMap>
+      <_LoggingWeavingSources>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'sources.txt'))</_LoggingWeavingSources>
+      <_LoggingWeavingReferences>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'references.txt'))</_LoggingWeavingReferences>
+      <_LoggingWeavingDefines>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'defines.txt'))</_LoggingWeavingDefines>
+      <_LoggingWeavingGeneratedFiles>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'generated-files.txt'))</_LoggingWeavingGeneratedFiles>
+      <_LoggingWeavingStamp>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'rewrite.stamp'))</_LoggingWeavingStamp>
+    </PropertyGroup>
+
+    <Error
+      Condition="!Exists('$(LoggingWeavingBuildHostPath)')"
+      Text="LoggingWeaving build host was not found at '$(LoggingWeavingBuildHostPath)'." />
+
+    <MakeDir Directories="$(_LoggingWeavingRoot)" />
+
+    <WriteLinesToFile
+      File="$(_LoggingWeavingMap)"
+      Lines="@(_LoggingWeavingAuthoredSource->'%(FullPath)')"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true"
+      Encoding="UTF-8" />
+
+    <WriteLinesToFile
+      File="$(_LoggingWeavingSources)"
+      Lines="@(Compile->'%(FullPath)')"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true"
+      Encoding="UTF-8" />
+
+    <WriteLinesToFile
+      File="$(_LoggingWeavingReferences)"
+      Lines="@(ReferencePathWithRefAssemblies->'%(FullPath)')"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true"
+      Encoding="UTF-8" />
+
+    <WriteLinesToFile
+      File="$(_LoggingWeavingDefines)"
+      Lines="$(DefineConstants)"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true"
+      Encoding="UTF-8" />
+  </Target>
+
+  <Target
+    Name="GenerateRewrittenLoggingSources"
+    DependsOnTargets="PrepareLoggingWeaving"
+    Inputs="@(Compile);@(ReferencePathWithRefAssemblies);$(LoggingWeavingBuildHostPath);$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LoggingWeavingBuildHostPath)')), 'LoggingWeaving.Rewriter.dll'));$(MSBuildAllProjects)"
+    Outputs="$(_LoggingWeavingGeneratedFiles);$(_LoggingWeavingStamp)"
+    Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
+
+    <Exec
+      Command="dotnet &quot;$(LoggingWeavingBuildHostPath)&quot; --map &quot;$(_LoggingWeavingMap)&quot; --sources &quot;$(_LoggingWeavingSources)&quot; --references &quot;$(_LoggingWeavingReferences)&quot; --defines &quot;$(_LoggingWeavingDefines)&quot; --generated-files &quot;$(_LoggingWeavingGeneratedFiles)&quot; --output-root &quot;$(_LoggingWeavingRoot)&quot; --project &quot;$(MSBuildProjectFullPath)&quot; --default-enabled &quot;$(LoggingWeavingDefaultEnabled)&quot; --language-version &quot;$(LangVersion)&quot;"
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      IgnoreExitCode="false" />
+
+    <Touch Files="$(_LoggingWeavingGeneratedFiles);$(_LoggingWeavingStamp)" AlwaysCreate="true" />
+  </Target>
+
+  <Target
+    Name="RewriteLoggingSources"
+    BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
+    DependsOnTargets="GenerateRewrittenLoggingSources"
+    Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
+
+    <ReadLinesFromFile File="$(_LoggingWeavingGeneratedFiles)">
+      <Output TaskParameter="Lines" ItemName="_LoggingWeavingGeneratedSource" />
+    </ReadLinesFromFile>
+
+    <Error
+      Condition="!Exists('%(_LoggingWeavingGeneratedSource.Identity)')"
+      Text="LoggingWeaving generated source was not found at '%(_LoggingWeavingGeneratedSource.Identity)'. Clean and rebuild the project." />
+
+    <ItemGroup>
+      <Compile Remove="@(_LoggingWeavingAuthoredSource)" />
+      <Compile Include="@(_LoggingWeavingGeneratedSource)" AutoGen="true" Visible="false" />
+    </ItemGroup>
+  </Target>
+</Project>

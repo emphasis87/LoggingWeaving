@@ -1,10 +1,19 @@
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace LoggingWeaving;
+namespace LoggingWeaving.Sample;
 
-internal sealed class Program
+internal sealed partial class Program
 {
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Information,
+        Message = "Application {ApplicationName} started at {StartedAt}")]
+    private static partial void LogApplicationStarted(
+        Microsoft.Extensions.Logging.ILogger logger,
+        string applicationName,
+        DateTimeOffset startedAt);
+
     private static void Main()
     {
         Log.Logger = new LoggerConfiguration()
@@ -18,12 +27,18 @@ internal sealed class Program
         using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.ClearProviders();
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddConsole();
+            builder.AddDebug();
             builder.AddSerilog(dispose: true);
         });
 
         ILogger<Program> logger = loggerFactory.CreateLogger<Program>();
 
-        logger.LogInformation("Application started at {StartedAt}", DateTimeOffset.Now);
+        LogApplicationStarted(
+            logger,
+            "LoggingWeaving".Replace("Weaving", " Weaving"),
+            DateTimeOffset.Now);
 
         for (int itemNumber = 1; itemNumber <= 3; itemNumber++)
         {
@@ -41,6 +56,8 @@ internal sealed class Program
             logger.LogError(exception, "An expected error was captured");
         }
 
-        logger.LogInformation("Application finished");
+        logger.LogInformation(
+            "Application {ApplicationName} finished",
+            "LoggingWeaving".Replace("Weaving", " Weaving"));
     }
 }

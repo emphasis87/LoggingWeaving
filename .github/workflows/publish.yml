@@ -1,0 +1,38 @@
+name: Publish NuGet Package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve package version
+        id: version
+        shell: pwsh
+        run: |
+          $version = '${{ github.event.release.tag_name }}' -replace '^v', ''
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore LoggingWeaving.slnx
+
+      - name: Test
+        run: dotnet test LoggingWeaving.slnx --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack src/LoggingWeaving.Package/LoggingWeaving.Package.csproj --configuration Release --no-restore --output artifacts -p:PackageVersion=${{ steps.version.outputs.value }}
+
+      - name: Push to NuGet
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

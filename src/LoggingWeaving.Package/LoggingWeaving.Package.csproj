@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PackageId>LoggingWeaving</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Luboš Hemala</Authors>
+    <Description>Defers Microsoft.Extensions.Logging argument evaluation until after null and log-level checks.</Description>
+    <PackageTags>logging;Microsoft.Extensions.Logging;Serilog;source-rewriter;weaving</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/emphasis87/LoggingWeaving</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeLoggingWeavingAssets</TargetsForTfmSpecificContentInPackage>
+    <_LoggingWeavingBuildHostPublishDir>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine($(MSBuildProjectDirectory), 'obj', $(Configuration), 'package-build-host'))'))</_LoggingWeavingBuildHostPublishDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LoggingWeaving.Generator\LoggingWeaving.Generator.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\LoggingWeaving.BuildHost\LoggingWeaving.BuildHost.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\build\LoggingWeaving.props" Pack="true" PackagePath="build\LoggingWeaving.props" />
+    <None Include="..\..\build\LoggingWeaving.targets" Pack="true" PackagePath="build\LoggingWeaving.targets" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <Target Name="PublishLoggingWeavingBuildHost" BeforeTargets="GenerateNuspec">
+    <MSBuild
+      Projects="..\LoggingWeaving.BuildHost\LoggingWeaving.BuildHost.csproj"
+      Targets="Publish"
+      Properties="Configuration=$(Configuration);TargetFramework=net8.0;PublishDir=$(_LoggingWeavingBuildHostPublishDir)" />
+  </Target>
+
+  <Target Name="IncludeLoggingWeavingAssets" DependsOnTargets="PublishLoggingWeavingBuildHost">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="..\LoggingWeaving.Generator\bin\$(Configuration)\netstandard2.0\LoggingWeaving.Generator.dll">
+        <PackagePath>analyzers\dotnet\cs</PackagePath>
+      </TfmSpecificPackageFile>
+      <TfmSpecificPackageFile Include="$(_LoggingWeavingBuildHostPublishDir)\**\*">
+        <PackagePath>tools\net8.0\any\%(RecursiveDir)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
+</Project>

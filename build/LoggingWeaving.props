@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <LoggingWeavingEnabled Condition="'$(LoggingWeavingEnabled)' == ''">true</LoggingWeavingEnabled>
+    <LoggingWeavingDefaultEnabled Condition="'$(LoggingWeavingDefaultEnabled)' == ''">true</LoggingWeavingDefaultEnabled>
+  </PropertyGroup>
+</Project>

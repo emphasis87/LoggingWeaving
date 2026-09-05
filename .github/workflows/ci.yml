@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-pack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore LoggingWeaving.slnx
+
+      - name: Test
+        run: dotnet test LoggingWeaving.slnx --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack src/LoggingWeaving.Package/LoggingWeaving.Package.csproj --configuration Release --no-restore --output artifacts
+
+      - name: Run packaged consumer
+        run: dotnet run --project tests/LoggingWeaving.PackageConsumer/LoggingWeaving.PackageConsumer.csproj --configuration Release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/*.nupkg
+          if-no-files-found: error
