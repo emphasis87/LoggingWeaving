@@ -16,7 +16,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
       - name: Restore
         run: dotnet restore LoggingWeaving.slnx
@@ -24,11 +27,24 @@ jobs:
       - name: Test
         run: dotnet test LoggingWeaving.slnx --configuration Release --no-restore
 
+      - name: Verify build host runtime handling
+        shell: pwsh
+        run: ./tests/VerifyBuildHostRuntime.ps1
+
       - name: Pack
         run: dotnet pack src/LoggingWeaving.Package/LoggingWeaving.Package.csproj --configuration Release --no-restore --output artifacts
 
       - name: Run packaged consumer
         run: dotnet run --project tests/LoggingWeaving.PackageConsumer/LoggingWeaving.PackageConsumer.csproj --configuration Release
+
+      - name: Run standard generator sample
+        run: dotnet run --project samples/LoggingWeaving.StandardSample/LoggingWeaving.StandardSample.csproj --configuration Release --no-restore
+
+      - name: Run telemetry generator sample
+        run: dotnet run --project samples/LoggingWeaving.TelemetrySample/LoggingWeaving.TelemetrySample.csproj --configuration Release --no-restore
+
+      - name: Run attribute control sample
+        run: dotnet run --project samples/LoggingWeaving.AttributeSample/LoggingWeaving.AttributeSample.csproj --configuration Release --no-restore
 
       - uses: actions/upload-artifact@v4
         with:

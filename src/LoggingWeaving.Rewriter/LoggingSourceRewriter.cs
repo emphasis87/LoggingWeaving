@@ -291,7 +291,9 @@ public sealed class LoggingSourceRewriter : ILoggingSourceRewriter
             }
 
             string temporaryType = generatedLoggerParameter!.Type.ToDisplayString(
-                SymbolDisplayFormat.FullyQualifiedFormat);
+                SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+                    SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions |
+                    SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier));
             call = new LoggingCall(
                 method.Name,
                 generatedLevel,
@@ -318,18 +320,16 @@ public sealed class LoggingSourceRewriter : ILoggingSourceRewriter
             IArgumentOperation? loggerArgument = operation.Arguments.FirstOrDefault(argument =>
                 argument.Parameter is not null && IsLoggerType(argument.Parameter.Type));
 
-            return (loggerArgument?.Syntax as ArgumentSyntax)?.Expression;
+            ArgumentSyntax? syntax = loggerArgument?.Syntax.FirstAncestorOrSelf<ArgumentSyntax>();
+            return syntax?.Parent == invocation.ArgumentList ? syntax.Expression : null;
         }
 
-        private static bool IsLoggerType(ITypeSymbol type)
+        private bool IsLoggerType(ITypeSymbol type)
         {
-            if (type.ToDisplayString() == LoggerInterfaceType)
-            {
-                return true;
-            }
-
-            return type.AllInterfaces.Any(interfaceType =>
-                interfaceType.ToDisplayString() == LoggerInterfaceType);
+            INamedTypeSymbol? loggerType = semanticModel.Compilation.GetTypeByMetadataName(LoggerInterfaceType);
+            return loggerType is not null &&
+                (SymbolEqualityComparer.Default.Equals(type, loggerType) ||
+                 type.AllInterfaces.Any(interfaceType => SymbolEqualityComparer.Default.Equals(interfaceType, loggerType)));
         }
 
         private static AttributeData? GetLoggerMessageAttribute(IMethodSymbol method)

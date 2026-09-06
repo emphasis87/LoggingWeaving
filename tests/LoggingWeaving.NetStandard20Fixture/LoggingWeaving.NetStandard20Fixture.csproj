@@ -1,29 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <LoggingWeavingBuildHostPath>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine($(MSBuildProjectDirectory), '..', '..', 'src', 'LoggingWeaving.BuildHost', 'bin', $(Configuration), 'net8.0', 'LoggingWeaving.BuildHost.dll'))'))</LoggingWeavingBuildHostPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
+    <Compile Include="..\Shared\NetStandardLoggingCase.cs" Link="NetStandardLoggingCase.cs" />
     <ProjectReference Include="..\..\src\LoggingWeaving.Generator\LoggingWeaving.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\LoggingWeaving.BuildHost\LoggingWeaving.BuildHost.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework" />
-    <ProjectReference Include="..\LoggingWeaving.NetStandard20Fixture\LoggingWeaving.NetStandard20Fixture.csproj" Aliases="Standard20" />
-    <ProjectReference Include="..\LoggingWeaving.NetStandard21Fixture\LoggingWeaving.NetStandard21Fixture.csproj" Aliases="Standard21" />
   </ItemGroup>
 
   <Import Project="..\..\build\LoggingWeaving.props" />

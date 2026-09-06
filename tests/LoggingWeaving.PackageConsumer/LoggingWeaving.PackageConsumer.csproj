@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LoggingWeaving" Version="0.1.0" />
+    <PackageReference Include="LoggingWeaving" Version="1.0.0-alpha1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
   </ItemGroup>
 

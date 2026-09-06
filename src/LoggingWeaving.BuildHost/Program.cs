@@ -8,6 +8,12 @@ static int Run(string[] args)
 {
     try
     {
+        if (args is ["--check-runtime"])
+        {
+            Console.WriteLine($"LoggingWeaving build host runtime: {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}");
+            return 0;
+        }
+
         IReadOnlyDictionary<string, string> arguments = ParseArguments(args);
         string projectDirectory = Path.GetDirectoryName(Path.GetFullPath(arguments["--project"]))!;
         string outputRoot = Path.GetFullPath(arguments["--output-root"]);
@@ -28,7 +34,7 @@ static int Run(string[] args)
             .ToArray();
 
         string[] defines = File.ReadAllText(arguments["--defines"])
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            .Split([';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         var request = new RewriteProjectRequest(
             sources,
@@ -122,7 +128,7 @@ static string GetOutputPath(string projectDirectory, string outputRoot, string s
 }
 
 static string NormalizeLanguageVersion(string value) =>
-    string.IsNullOrWhiteSpace(value) || value == "default" ? "12.0" : value;
+    string.IsNullOrWhiteSpace(value) || value == "default" ? "14.0" : value;
 
 static void WriteIfChanged(string path, string text)
 {

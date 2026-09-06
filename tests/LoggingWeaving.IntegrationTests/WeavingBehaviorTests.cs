@@ -8,6 +8,17 @@ public sealed partial class WeavingBehaviorTests
     private int evaluationCount;
     private int loggerEvaluationCount;
 
+#if NET6_0_OR_GREATER
+    [Fact]
+    public void FrameworkConditionalCode_IsWoven()
+    {
+        var logger = new RecordingLogger(enabled: false);
+        logger.LogInformation("Conditional value: {Value}", EvaluateArgument());
+        Assert.Equal(0, evaluationCount);
+        Assert.Equal(1, logger.IsEnabledCount);
+    }
+#endif
+
     [Fact]
     public void DisabledExtensionCall_DoesNotEvaluateArgument()
     {
@@ -63,6 +74,27 @@ public sealed partial class WeavingBehaviorTests
         Assert.Equal(0, evaluationCount);
         Assert.Equal(0, logger.LogCount);
         Assert.Equal(1, logger.IsEnabledCount);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NullForgivingLoggerMessageReceiver_IsGuardedBeforeArguments(bool? enabled)
+    {
+        var recordingLogger = new RecordingLogger(enabled: enabled == true);
+        ILogger? GetNullableLogger()
+        {
+            loggerEvaluationCount++;
+            return enabled.HasValue ? recordingLogger : null;
+        }
+
+        LogGeneratedValue(GetNullableLogger()!, EvaluateArgument());
+
+        Assert.Equal(1, loggerEvaluationCount);
+        Assert.Equal(enabled == true ? 1 : 0, evaluationCount);
+        Assert.Equal(enabled == true ? 1 : 0, recordingLogger.LogCount);
+        Assert.Equal(enabled.HasValue ? (enabled.Value ? 2 : 1) : 0, recordingLogger.IsEnabledCount);
     }
 
     [Fact]

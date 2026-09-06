@@ -11,7 +11,7 @@ public sealed record RewriteProjectRequest(
 
 public sealed record RewriteOptions(
     bool DefaultEnabled = true,
-    string LanguageVersion = "12.0");
+    string LanguageVersion = "14.0");
 
 public sealed record RewrittenDocument(string Path, string Text);
 

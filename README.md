@@ -34,8 +34,9 @@ Sentry, and other structured logging providers.
 
 ## Status
 
-LoggingWeaving is an experimental `0.1.x` package. The current implementation
-targets .NET 8 and C# 12 projects.
+LoggingWeaving is an experimental `1.0.0-alpha1` package. Supported targets are
+.NET 8, 9, and 10, plus .NET Standard 2.0 and 2.1 libraries.
+The current rewriter uses C# 12.
 
 Supported calls:
 
@@ -49,12 +50,36 @@ Supported calls:
 Calls are matched semantically. Unrelated methods with the same names are not
 rewritten. Unsupported recognized forms remain unchanged and produce `LW0001`.
 
+## Build Requirements
+
+Consumer target frameworks and build-host runtimes are separate requirements:
+
+- Applications and libraries may target `net8.0`, `net9.0`, `net10.0`, or
+  `netstandard2.0` / `netstandard2.1`, with compatible logging dependencies.
+- Build with a modern SDK/compiler (Roslyn 4.8 or newer) and explicitly set
+  `<LangVersion>12.0</LangVersion>`. A newer target framework does not enable
+  newer C# syntax in the rewriter.
+- The out-of-process build host targets .NET 8 and uses `RollForward=Major`.
+  It can run without .NET 8 when a compatible newer runtime is installed.
+  Older runtimes cannot run the build host and are not supported consumer
+  targets.
+- Building this repository requires the .NET 10 SDK specified by `global.json`.
+  Running the complete test suite additionally requires runtimes 8 and 9.
+
+Before replacing compiler inputs, MSBuild starts the host with `--check-runtime`.
+This uses the actual .NET host resolution rules rather than guessing from an
+installed-version list. A startup failure stops the build with `LW0002` and
+installation guidance; it never silently disables weaving. Install a supported
+.NET runtime/SDK from https://dotnet.microsoft.com/download, or point
+`LoggingWeavingDotNetPath` at a compatible `dotnet` executable. Check runtime
+architecture and any `DOTNET_ROLL_FORWARD` override if startup still fails.
+
 ## Installation
 
 After publishing the package, add one private build dependency:
 
 ```xml
-<PackageReference Include="LoggingWeaving" Version="0.1.0" PrivateAssets="all" />
+<PackageReference Include="LoggingWeaving" Version="1.0.0-alpha1" PrivateAssets="all" />
 ```
 
 Weaving is enabled by default. The package contributes an internal configuration
@@ -130,16 +155,64 @@ dotnet run --project tests/LoggingWeaving.PackageConsumer/LoggingWeaving.Package
     --configuration Release
 ```
 
-The test suite contains semantic rewriter tests, build-time runtime tests, and a
-consumer that restores and executes the generated NuGet package.
+The test suite contains semantic rewriter tests, build-time runtime tests for
+both the standard Microsoft logging generator and the Telemetry generator,
+and a consumer that restores and executes the generated NuGet package.
+The same runtime behavior tests run against both generators. Telemetry tests
+also cover nullable logger signatures with and without `SkipEnabledCheck`.
+Both runtime suites target .NET 8 through 10. Two separate fixture assemblies
+target .NET Standard 2.0 and 2.1; every runtime suite loads and exercises both
+exact assemblies, rather than selecting just the nearest compatible target.
+.NET Standard has no independent runtime to execute tests on.
 
-Run the Serilog sample with:
+After building the solution, run the build-host startup checks with:
 
 ```powershell
-dotnet run --project samples/LoggingWeaving.Sample/LoggingWeaving.Sample.csproj
+./tests/VerifyBuildHostRuntime.ps1
 ```
 
-It writes events to `example.log` in the current working directory.
+The script checks normal startup, roll-forward to the newest installed runtime
+(the test environment includes .NET 10), and an actionable `LW0002` failure.
+Optional `-NewerOnlyDotNetPath` and `-UnavailableDotNetPath` parameters exercise
+isolated installations containing only a newer runtime or only older runtimes.
+These paths are test inputs and are not embedded in the package.
+
+Run the .NET 10 Serilog sample using `Microsoft.Extensions.Telemetry.Abstractions` with:
+
+```powershell
+dotnet run --project samples/LoggingWeaving.TelemetrySample/LoggingWeaving.TelemetrySample.csproj
+```
+
+It writes events to the console, debugger output, and `example.log` in the
+current working directory. It demonstrates all four combinations of nullable
+logger signatures and `SkipEnabledCheck`, including calls with a null logger.
+
+Run the .NET 10 sample using the standard Microsoft logging generator with:
+
+```powershell
+dotnet run --project samples/LoggingWeaving.StandardSample/LoggingWeaving.StandardSample.csproj
+```
+
+This sample uses non-nullable `ILogger` signatures. Its null-logger calls use
+`logger!`: the null-forgiving operator only affects compiler analysis; the
+rewriter supplies the runtime null guard. Both samples keep `SkipEnabledCheck`
+as authored. The rewriter targets the `ILogger` and `LoggerMessageAttribute`
+contracts, not a particular generator implementation.
+
+Run the attribute-control sample with:
+
+```powershell
+dotnet run --project samples/LoggingWeaving.AttributeSample/LoggingWeaving.AttributeSample.csproj
+```
+
+This sample uses a disabled logger and checks argument evaluation counts for
+default weaving, method-level opt-out, type-level opt-out, and method-level
+opt-in overriding its containing type. The expected counts are `0, 1, 1, 0`.
+
+All three projects are included in the solution. In Visual Studio, set the
+desired sample as the startup project and use the Debug configuration.
+The LoggerMessage declarations are at the end of each logging sample's class
+under `// LOGGING`.
 
 ## Publishing
 
@@ -147,7 +220,7 @@ It writes events to `example.log` in the current working directory.
 GitHub CI workflow builds, tests, packs, and runs the packaged consumer on Linux.
 
 The publish workflow runs when a GitHub release is published. Its tag must be a
-NuGet-compatible version such as `v0.1.0`, and the repository must define the
+NuGet-compatible version such as `v1.0.0-alpha1`, and the repository must define the
 `NUGET_API_KEY` Actions secret.
 
 ## Limitations

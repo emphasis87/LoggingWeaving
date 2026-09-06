@@ -6,7 +6,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <PackageId>LoggingWeaving</PackageId>
-    <Version>0.1.0</Version>
+    <Version>1.0.0-alpha1</Version>
     <Authors>Luboš Hemala</Authors>
     <Description>Defers Microsoft.Extensions.Logging argument evaluation until after null and log-level checks.</Description>
     <PackageTags>logging;Microsoft.Extensions.Logging;Serilog;source-rewriter;weaving</PackageTags>

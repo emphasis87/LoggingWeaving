@@ -42,6 +42,33 @@ public sealed class LoggingSourceRewriterTests
     }
 
     [Fact]
+    public void Rewrite_SupportsCSharp14Syntax()
+    {
+        const string source = """
+            using Microsoft.Extensions.Logging;
+
+            internal static class WorkerExtensions
+            {
+                extension(ILogger logger)
+                {
+                    public void Run()
+                    {
+                        logger.LogInformation("C# 14 extension block");
+                    }
+                }
+            }
+            """;
+
+        RewriteProjectResult result = Rewrite(source);
+        string rewritten = Assert.Single(result.Documents).Text;
+
+        Assert.Equal(1, result.RewrittenCallCount);
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains("IsEnabled(global::Microsoft.Extensions.Logging.LogLevel.Information)", rewritten);
+        AssertCompiles(rewritten, LanguageVersion.CSharp14);
+    }
+
+    [Fact]
     public void Rewrite_LeavesUnrelatedCallsUnchanged()
     {
         const string source = """
@@ -118,6 +145,43 @@ public sealed class LoggingSourceRewriterTests
         Assert.True(
             rewritten.IndexOf("IsEnabled", StringComparison.Ordinal) <
             rewritten.IndexOf("BuildValue()", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("ILogger?", false)]
+    [InlineData("ILogger?", true)]
+    [InlineData("ILogger<Worker>?", false)]
+    [InlineData("ILogger<Worker>?", true)]
+    public void Rewrite_RecognizesNullableLoggerAndPreservesSkipEnabledCheck(string loggerType, bool skipEnabledCheck)
+    {
+        string source = $$"""
+            #nullable enable
+            using Microsoft.Extensions.Logging;
+            internal sealed class Worker
+            {
+                [LoggerMessage(Level = LogLevel.Information, Message = "{Value}", SkipEnabledCheck = {{skipEnabledCheck.ToString().ToLowerInvariant()}})]
+                private static void LogValue({{loggerType}} logger, string value) { }
+
+                public void Run({{loggerType}} logger)
+                {
+                    LogValue(logger, "value");
+                }
+            }
+            """;
+        RewriteProjectResult result = Rewrite(source);
+        string rewritten = Assert.Single(result.Documents).Text;
+        Assert.Equal(1, result.RewrittenCallCount);
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains($"SkipEnabledCheck = {skipEnabledCheck.ToString().ToLowerInvariant()}", rewritten);
+        Assert.Contains("is not null", rewritten);
+        Assert.Contains("IsEnabled(global::Microsoft.Extensions.Logging.LogLevel.Information)", rewritten);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "NullableLoggerVerification",
+            [CSharpSyntaxTree.ParseText(rewritten)],
+            GetReferencePaths().Select(path => MetadataReference.CreateFromFile(path)),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.Empty(compilation.GetDiagnostics().Where(diagnostic =>
+            diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning));
     }
 
     [Fact]
@@ -355,9 +419,13 @@ public sealed class LoggingSourceRewriterTests
             .ToArray();
     }
 
-    private static void AssertCompiles(string source)
+    private static void AssertCompiles(
+        string source,
+        LanguageVersion languageVersion = LanguageVersion.CSharp14)
     {
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(
+            source,
+            new CSharpParseOptions(languageVersion));
         CSharpCompilation compilation = CSharpCompilation.Create(
             "RewriteVerification",
             [syntaxTree],

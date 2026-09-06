@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Telemetry.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
@@ -20,6 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\LoggingWeaving.IntegrationTests\WeavingBehaviorTests.cs" Link="WeavingBehaviorTests.cs" />
+    <Compile Include="..\LoggingWeaving.IntegrationTests\NetStandardCompatibilityTests.cs" Link="NetStandardCompatibilityTests.cs" />
     <ProjectReference Include="..\..\src\LoggingWeaving.Generator\LoggingWeaving.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\LoggingWeaving.BuildHost\LoggingWeaving.BuildHost.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework" />
     <ProjectReference Include="..\LoggingWeaving.NetStandard20Fixture\LoggingWeaving.NetStandard20Fixture.csproj" Aliases="Standard20" />

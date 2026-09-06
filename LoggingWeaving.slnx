@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/samples/">
-    <Project Path="samples/LoggingWeaving.Sample/LoggingWeaving.Sample.csproj" />
+    <Project Path="samples/LoggingWeaving.TelemetrySample/LoggingWeaving.TelemetrySample.csproj" />
+    <Project Path="samples/LoggingWeaving.StandardSample/LoggingWeaving.StandardSample.csproj" />
+    <Project Path="samples/LoggingWeaving.AttributeSample/LoggingWeaving.AttributeSample.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/LoggingWeaving.Generator/LoggingWeaving.Generator.csproj" />
@@ -10,6 +12,9 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LoggingWeaving.IntegrationTests/LoggingWeaving.IntegrationTests.csproj" />
+    <Project Path="tests/LoggingWeaving.NetStandard20Fixture/LoggingWeaving.NetStandard20Fixture.csproj" />
+    <Project Path="tests/LoggingWeaving.NetStandard21Fixture/LoggingWeaving.NetStandard21Fixture.csproj" />
     <Project Path="tests/LoggingWeaving.Rewriter.Tests/LoggingWeaving.Rewriter.Tests.csproj" />
+    <Project Path="tests/LoggingWeaving.TelemetryIntegrationTests/LoggingWeaving.TelemetryIntegrationTests.csproj" />
   </Folder>
 </Solution>

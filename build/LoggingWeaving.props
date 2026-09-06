@@ -2,5 +2,6 @@
   <PropertyGroup>
     <LoggingWeavingEnabled Condition="'$(LoggingWeavingEnabled)' == ''">true</LoggingWeavingEnabled>
     <LoggingWeavingDefaultEnabled Condition="'$(LoggingWeavingDefaultEnabled)' == ''">true</LoggingWeavingDefaultEnabled>
+    <LoggingWeavingDotNetPath Condition="'$(LoggingWeavingDotNetPath)' == ''">dotnet</LoggingWeavingDotNetPath>
   </PropertyGroup>
 </Project>
