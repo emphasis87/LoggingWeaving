@@ -69,7 +69,7 @@ public sealed class LoggingSourceRewriter : ILoggingSourceRewriter
             var callRewriter = new LoggingCallSyntaxRewriter(
                 semanticModel,
                 diagnostics,
-                options.DefaultEnabled);
+                options.ProjectGuardEnabled);
             SyntaxNode originalRoot = syntaxTree.GetRoot(cancellationToken);
             SyntaxNode rewrittenRoot = callRewriter.Visit(originalRoot) ?? originalRoot;
             string rewrittenText = rewrittenRoot.ToFullString();

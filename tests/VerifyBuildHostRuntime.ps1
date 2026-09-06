@@ -42,7 +42,7 @@ try {
     $env:DOTNET_MULTILEVEL_LOOKUP = '0'
     if ($NewerOnlyDotNetPath) {
         & dotnet msbuild $project -nologo -v:minimal -t:VerifyLoggingWeavingBuildHost `
-            "-p:Configuration=$Configuration" "-p:LoggingWeavingDotNetPath=$NewerOnlyDotNetPath"
+            "-p:Configuration=$Configuration" "-p:LoggingWeavingDotnetPath=$NewerOnlyDotNetPath"
         if ($LASTEXITCODE -ne 0) {
             throw 'BuildHost preflight failed with the newer-only dotnet installation.'
         }
@@ -51,9 +51,19 @@ try {
     if (-not $UnavailableDotNetPath) {
         $UnavailableDotNetPath = Join-Path $repo "missing-dotnet-$([Guid]::NewGuid().ToString('N'))"
     }
-    $output = & dotnet msbuild $project -nologo -v:minimal -t:VerifyLoggingWeavingBuildHost `
-        "-p:Configuration=$Configuration" "-p:LoggingWeavingDotNetPath=$UnavailableDotNetPath" 2>&1
-    if ($LASTEXITCODE -eq 0 -or "$output" -notmatch 'LW0002') {
+    $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    try {
+        # GitHub's PowerShell 7 runner treats nonzero native exit codes as
+        # terminating errors. This invocation is expected to fail with LW0002.
+        $PSNativeCommandUseErrorActionPreference = $false
+        $output = & dotnet msbuild $project -nologo -v:minimal -t:VerifyLoggingWeavingBuildHost `
+            "-p:Configuration=$Configuration" "-p:LoggingWeavingDotnetPath=$UnavailableDotNetPath" 2>&1
+        $expectedFailureExitCode = $LASTEXITCODE
+    }
+    finally {
+        $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
+    }
+    if ($expectedFailureExitCode -eq 0 -or "$output" -notmatch 'LW0002') {
         throw "Expected actionable LW0002 failure, not a successful or silently unwoven build: $output"
     }
 }

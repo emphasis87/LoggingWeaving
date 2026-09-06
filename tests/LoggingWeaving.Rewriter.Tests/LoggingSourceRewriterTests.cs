@@ -393,7 +393,7 @@ public sealed class LoggingSourceRewriterTests
         return rewriter.Rewrite(new RewriteProjectRequest(
             [new SourceDocument(path, source)],
             GetReferencePaths(),
-            Options: new RewriteOptions(DefaultEnabled: defaultEnabled)));
+            Options: new RewriteOptions(ProjectGuardEnabled: defaultEnabled)));
     }
 
     private static string WithLineMapping(string source) => $"#line 1 \"Worker.cs\"\n{source}";

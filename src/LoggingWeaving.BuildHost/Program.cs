@@ -42,7 +42,7 @@ static int Run(string[] args)
             Path.GetFileNameWithoutExtension(arguments["--project"]),
             defines,
             new RewriteOptions(
-                bool.Parse(arguments["--default-enabled"]),
+                ProjectGuardEnabled: ParseProjectGuardMode(arguments["--project-guard-mode"]),
                 NormalizeLanguageVersion(arguments["--language-version"])));
 
         RewriteProjectResult result = new LoggingSourceRewriter().Rewrite(request);
@@ -129,6 +129,14 @@ static string GetOutputPath(string projectDirectory, string outputRoot, string s
 
 static string NormalizeLanguageVersion(string value) =>
     string.IsNullOrWhiteSpace(value) || value == "default" ? "14.0" : value;
+
+static bool ParseProjectGuardMode(string value) => value switch
+{
+    "Enabled" => true,
+    "Disabled" => false,
+    _ => throw new ArgumentException(
+        $"Unsupported project guard mode '{value}'. Expected 'Enabled' or 'Disabled'.")
+};
 
 static void WriteIfChanged(string path, string text)
 {

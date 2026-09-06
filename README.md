@@ -36,7 +36,7 @@ Sentry, and other structured logging providers.
 
 LoggingWeaving is an experimental `1.0.0-alpha1` package. Supported targets are
 .NET 8, 9, and 10, plus .NET Standard 2.0 and 2.1 libraries.
-The current rewriter uses C# 12.
+The current rewriter uses C# 14.
 
 Supported calls:
 
@@ -56,9 +56,8 @@ Consumer target frameworks and build-host runtimes are separate requirements:
 
 - Applications and libraries may target `net8.0`, `net9.0`, `net10.0`, or
   `netstandard2.0` / `netstandard2.1`, with compatible logging dependencies.
-- Build with a modern SDK/compiler (Roslyn 4.8 or newer) and explicitly set
-  `<LangVersion>12.0</LangVersion>`. A newer target framework does not enable
-  newer C# syntax in the rewriter.
+- Build with the .NET 10 SDK / Roslyn 5 and C# 14. The target framework may
+  still be .NET 8, .NET 9, or .NET Standard 2.0/2.1.
 - The out-of-process build host targets .NET 8 and uses `RollForward=Major`.
   It can run without .NET 8 when a compatible newer runtime is installed.
   Older runtimes cannot run the build host and are not supported consumer
@@ -71,7 +70,7 @@ This uses the actual .NET host resolution rules rather than guessing from an
 installed-version list. A startup failure stops the build with `LW0002` and
 installation guidance; it never silently disables weaving. Install a supported
 .NET runtime/SDK from https://dotnet.microsoft.com/download, or point
-`LoggingWeavingDotNetPath` at a compatible `dotnet` executable. Check runtime
+`LoggingWeavingDotnetPath` at a compatible `dotnet` executable. Check runtime
 architecture and any `DOTNET_ROLL_FORWARD` override if startup still fails.
 
 ## Installation
@@ -101,7 +100,7 @@ Enable weaving inside a project whose default is disabled:
 
 ```xml
 <PropertyGroup>
-  <LoggingWeavingDefaultEnabled>false</LoggingWeavingDefaultEnabled>
+  <LoggingWeavingProjectGuardMode>Disabled</LoggingWeavingProjectGuardMode>
 </PropertyGroup>
 ```
 
@@ -225,7 +224,8 @@ NuGet-compatible version such as `v1.0.0-alpha1`, and the repository must define
 
 ## Limitations
 
-- Only C# 12 syntax is supported by the current rewriter host.
+- The current rewriter host supports C# 14 syntax and requires the .NET 10 SDK
+  when building consumer projects.
 - Logging invocations must be representable as standalone statements.
 - Conditional-access calls and dynamic log levels are not currently rewritten.
 - Logger receiver evaluation is preserved exactly once.

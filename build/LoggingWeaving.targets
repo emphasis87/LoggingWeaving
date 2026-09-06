@@ -13,7 +13,7 @@
     Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
 
     <PropertyGroup>
-      <_LoggingWeavingConfigurationHash>$([MSBuild]::StableStringHash('$(DefineConstants)|$(LoggingWeavingDefaultEnabled)|$(LangVersion)'))</_LoggingWeavingConfigurationHash>
+      <_LoggingWeavingConfigurationHash>$([MSBuild]::StableStringHash('$(DefineConstants)|$(LoggingWeavingProjectGuardMode)|$(LangVersion)'))</_LoggingWeavingConfigurationHash>
       <_LoggingWeavingRoot>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine($(IntermediateOutputPath), 'LoggingWeaving', '$(_LoggingWeavingConfigurationHash)'))'))</_LoggingWeavingRoot>
       <_LoggingWeavingMap>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'map.txt'))</_LoggingWeavingMap>
       <_LoggingWeavingSources>$([System.IO.Path]::Combine('$(_LoggingWeavingRoot)', 'sources.txt'))</_LoggingWeavingSources>
@@ -26,6 +26,10 @@
     <Error
       Condition="!Exists('$(LoggingWeavingBuildHostPath)')"
       Text="LoggingWeaving build host was not found at '$(LoggingWeavingBuildHostPath)'." />
+    <Error
+      Condition="'$(LoggingWeavingProjectGuardMode)' != 'Enabled' and '$(LoggingWeavingProjectGuardMode)' != 'Disabled'"
+      Code="LW0003"
+      Text="LoggingWeavingProjectGuardMode must be 'Enabled' or 'Disabled', but was '$(LoggingWeavingProjectGuardMode)'." />
 
     <MakeDir Directories="$(_LoggingWeavingRoot)" />
 
@@ -64,7 +68,7 @@
     Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
 
     <Exec
-      Command="&quot;$(LoggingWeavingDotNetPath)&quot; &quot;$(LoggingWeavingBuildHostPath)&quot; --check-runtime"
+      Command="&quot;$(LoggingWeavingDotnetPath)&quot; &quot;$(LoggingWeavingBuildHostPath)&quot; --check-runtime"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       IgnoreExitCode="true"
       IgnoreStandardErrorWarningFormat="true"
@@ -75,7 +79,7 @@
     <Error
       Condition="'$(_LoggingWeavingRuntimeExitCode)' != '0'"
       Code="LW0002"
-      Text="LoggingWeaving build host could not start using '$(LoggingWeavingDotNetPath)' (exit code $(_LoggingWeavingRuntimeExitCode)). It requires Microsoft.NETCore.App 8.0 or a compatible newer runtime; this requirement is independent of the project's target framework. Install a supported .NET runtime from https://dotnet.microsoft.com/download or set LoggingWeavingDotNetPath to a compatible dotnet executable. Check architecture and DOTNET_ROLL_FORWARD settings, and the host diagnostic above. Weaving has not been silently disabled." />
+      Text="LoggingWeaving build host could not start using '$(LoggingWeavingDotnetPath)' (exit code $(_LoggingWeavingRuntimeExitCode)). It requires Microsoft.NETCore.App 8.0 or a compatible newer runtime; this requirement is independent of the project's target framework. Install a supported .NET runtime from https://dotnet.microsoft.com/download or set LoggingWeavingDotnetPath to a compatible dotnet executable. Check architecture and DOTNET_ROLL_FORWARD settings, and the host diagnostic above. Weaving has not been silently disabled." />
   </Target>
 
   <Target
@@ -86,7 +90,7 @@
     Condition="'$(LoggingWeavingEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(SkipCompilerExecution)' != 'true'">
 
     <Exec
-      Command="&quot;$(LoggingWeavingDotNetPath)&quot; &quot;$(LoggingWeavingBuildHostPath)&quot; --map &quot;$(_LoggingWeavingMap)&quot; --sources &quot;$(_LoggingWeavingSources)&quot; --references &quot;$(_LoggingWeavingReferences)&quot; --defines &quot;$(_LoggingWeavingDefines)&quot; --generated-files &quot;$(_LoggingWeavingGeneratedFiles)&quot; --output-root &quot;$(_LoggingWeavingRoot)&quot; --project &quot;$(MSBuildProjectFullPath)&quot; --default-enabled &quot;$(LoggingWeavingDefaultEnabled)&quot; --language-version &quot;$(LangVersion)&quot;"
+      Command="&quot;$(LoggingWeavingDotnetPath)&quot; &quot;$(LoggingWeavingBuildHostPath)&quot; --map &quot;$(_LoggingWeavingMap)&quot; --sources &quot;$(_LoggingWeavingSources)&quot; --references &quot;$(_LoggingWeavingReferences)&quot; --defines &quot;$(_LoggingWeavingDefines)&quot; --generated-files &quot;$(_LoggingWeavingGeneratedFiles)&quot; --output-root &quot;$(_LoggingWeavingRoot)&quot; --project &quot;$(MSBuildProjectFullPath)&quot; --project-guard-mode &quot;$(LoggingWeavingProjectGuardMode)&quot; --language-version &quot;$(LangVersion)&quot;"
       WorkingDirectory="$(MSBuildProjectDirectory)"
       IgnoreExitCode="false" />
 

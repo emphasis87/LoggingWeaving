@@ -10,7 +10,7 @@ public sealed record RewriteProjectRequest(
     RewriteOptions? Options = null);
 
 public sealed record RewriteOptions(
-    bool DefaultEnabled = true,
+    bool ProjectGuardEnabled = true,
     string LanguageVersion = "14.0");
 
 public sealed record RewrittenDocument(string Path, string Text);

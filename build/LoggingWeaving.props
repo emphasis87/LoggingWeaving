@@ -1,7 +1,10 @@
 <Project>
   <PropertyGroup>
+    <!-- Enables build-time rewriting for this project. -->
     <LoggingWeavingEnabled Condition="'$(LoggingWeavingEnabled)' == ''">true</LoggingWeavingEnabled>
-    <LoggingWeavingDefaultEnabled Condition="'$(LoggingWeavingDefaultEnabled)' == ''">true</LoggingWeavingDefaultEnabled>
-    <LoggingWeavingDotNetPath Condition="'$(LoggingWeavingDotNetPath)' == ''">dotnet</LoggingWeavingDotNetPath>
+    <!-- Sets the project-level guard mode. Override with LoggingGuard attribute on assembly, type or method. -->
+    <LoggingWeavingProjectGuardMode Condition="'$(LoggingWeavingProjectGuardMode)' == ''">Enabled</LoggingWeavingProjectGuardMode>
+    <!-- Path to the dotnet executable used to run the out-of-process build host. -->
+    <LoggingWeavingDotnetPath Condition="'$(LoggingWeavingDotnetPath)' == ''">dotnet</LoggingWeavingDotnetPath>
   </PropertyGroup>
 </Project>
