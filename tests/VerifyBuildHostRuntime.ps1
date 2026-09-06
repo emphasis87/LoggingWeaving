@@ -72,3 +72,4 @@ finally {
 }
 
 'Verified BuildHost startup, major roll-forward, and actionable startup failure.'
+exit 0
